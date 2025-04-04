@@ -2,6 +2,10 @@ import pandas as pd
 import psycopg2
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+# === Load environment variables ===
+load_dotenv()
 
 # === Extract ===
 def extract_latest_csv(folder_path="data_lake/raw"):
@@ -18,8 +22,20 @@ def transform_data(df):
     return df
 
 # === Load ===
-def load_to_postgres(df, dbname="sales_db", user="mousragheb"):
-    conn = psycopg2.connect(dbname=dbname, user=user)
+def load_to_postgres(df):
+    dbname = os.getenv("DB_NAME")
+    user = os.getenv("DB_USER")
+    password = os.getenv("DB_PASSWORD")
+    host = os.getenv("DB_HOST")
+    port = os.getenv("DB_PORT")
+
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
     cur = conn.cursor()
 
     # Create table if it doesn't exist
@@ -36,7 +52,7 @@ def load_to_postgres(df, dbname="sales_db", user="mousragheb"):
         )
     """)
 
-    # Insert data row by row
+    # Insert data
     for _, row in df.iterrows():
         cur.execute("""
             INSERT INTO sales (order_id, customer_name, region, product, quantity, unit_price, total_price, timestamp)
